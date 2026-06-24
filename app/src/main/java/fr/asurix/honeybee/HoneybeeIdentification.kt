@@ -12,16 +12,12 @@ import java.util.UUID
 /**
  * Génère un nouvel identifiant toutes les 15 minutes en utilisant un LFSR 16 bits.
  */
-class HoneybeeIdentification {
-    companion object {
-        private const val TAG = "HoneybeeIdentification"
+object HoneybeeIdentification {
+    private const val TAG = "HoneybeeIdentification"
 
-        private const val PERIOD_DURATION = 15 * 60 * 1000L // 15 minutes en ms
-        private const val LFSR_POLYNOMIAL = 0x402B          // Polynôme pour le LFSR
-    }
-
+    private const val PERIOD_DURATION = 15 * 60 * 1000L // 15 minutes en ms
+    private const val LFSR_POLYNOMIAL = 0x402B          // Polynôme pour le LFSR
     private val deviceUuid: UUID = UUID.randomUUID()
-
     private var currentPeriodIndex: Int = -1 
     private var currentSenderId: Int = 0
 
@@ -30,7 +26,11 @@ class HoneybeeIdentification {
     }
 
     /**
-     * Récupère l'ID de l'expéditeur actuel.
+     * Récupère l'ID de l'expéditeur actuel,
+     *  en le mettant à jour automatiquement 
+     *  si la période de 15 minutes est écoulée.
+     * 
+     * @return L'identifiant sur 16 bits.
      */
     @Synchronized
     fun getCurrentSenderId(): Int {
@@ -58,12 +58,17 @@ class HoneybeeIdentification {
         }
     }
 
+    /**
+     * Calcule l'index de la période globale actuelle (depuis l'époque UNIX).
+     */
     private fun getCurrentGlobalPeriod(): Int {
         return (System.currentTimeMillis() / PERIOD_DURATION).toInt()
     }
 
     /**
      * Génère et met en cache un nouvel identifiant d'expéditeur.
+     * 
+     * @param period L'index de la période actuelle.
      */
     private fun generateAndSetId(period: Int) {
         currentPeriodIndex = period
@@ -87,11 +92,15 @@ class HoneybeeIdentification {
      * 
      * https://fr.wikipedia.org/wiki/Registre_%C3%A0_d%C3%A9calage_%C3%A0_r%C3%A9troaction_lin%C3%A9aire 
      * https://defeo.lu/in420/Bit%20twiddling%20et%20LFSR
+     * 
+     * @param initialSeed La graine initiale (doit être non nulle).
+     * @param iterations Le nombre d'itérations à effectuer.
+     * @return L'état final du LFSR sur 16 bits.
      */
     private fun lfsr(initialSeed: Int, periods: Int): Int {
         var state = initialSeed
         repeat(periods) {
-            val lsb = state and 1 // Regarde le bit sortant
+            val lsb = state and 1 // Isole le bit de poids faible (sortant)
             state = state ushr 1  // Décale tout les bits vers la droite
             if (lsb == 1) {       // Si le bit sortant est 1, on applique le masque polynomial via XOR
                 state = state xor LFSR_POLYNOMIAL
