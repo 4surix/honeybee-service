@@ -1,11 +1,14 @@
 // Kotlin 1.9
 // Gradle 8.5
 // ---------------------------------------------------------------------------
-package com.honeybee.service
+package fr.asurix.honeybee
+
 
 import android.util.Log
+
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+
 
 /**
  * Classe de base pour tous les paquets Honeybee.
@@ -19,6 +22,7 @@ sealed class HoneybeePacket(
 ) {
     companion object {
         private const val TAG = "HoneybeePacket"
+
         private const val PROTOCOL_ID = 0b10100 // 5 bits
         private const val HEADER_SIZE = 1       // 1 byte
 
